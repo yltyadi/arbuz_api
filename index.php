@@ -1,90 +1,19 @@
 <?php
 
-function getProducts($connect) {
-    $products = mysqli_query($connect, "SELECT * FROM `products`");
-    $productsArr = [];
+// Note: This project was ran and tested on APACHE SERVER
 
-    if ($connect) {
-        while ($product = mysqli_fetch_assoc($products)) {
-            $productsArr[] = $product;
-        }
+require "controllerFunctions.php";
 
-        echo json_encode($productsArr);
-    } else {
-        echo "Error! Failed to connect to database!";
-    }
-}
-
-function getProductById($connect, $id) {
-    $product = mysqli_query($connect, "SELECT * FROM `products` WHERE `product_id`='$id'");
-    
-    if (mysqli_num_rows($product) !== 0) {
-        $product = mysqli_fetch_assoc($product);
-        echo json_encode($product);
-    } else {
-        $response = [
-            'status' => false,
-            'message' => 'Product not found'
-        ];
-
-        http_response_code(404);
-        echo json_encode($response);
-    }
-}
-
-function addProduct($connect, $data) {
-    $product_name = $data['product_name'];
-    $price = $data['price'];
-    $is_available = $data['is_available'];
-
-    mysqli_query($connect, "INSERT INTO `Products` (`product_id`, `product_name`, `price`, `is_available`) VALUES (NULL, '$product_name', '$price', '$is_available')");
-
-    $response = [
-        'status' => true,
-        'message' => mysqli_insert_id($connect)
-    ];
-
-    http_response_code(201);
-    echo json_encode($response);
-}
-
-function updateProduct($connect, $id, $data) {
-    $product_name = $data['product_name'];
-    $price = $data['price'];
-    $is_available = $data['is_available'];
-
-    mysqli_query($connect, "UPDATE `Products` SET `product_name`='$product_name', `price`='$price', `is_available`='$is_available' WHERE `Products`.`product_id`='$id'");
-
-    $response = [
-        'status' => true,
-        'message' => 'Product was updated'
-    ];
-
-    http_response_code(200);
-    echo json_encode($response);
-}
-
-function deleteProduct($connect, $id) {
-    mysqli_query($connect, "DELETE FROM `Products` WHERE `Products`.`product_id` = '$id'");
-
-    $response = [
-        'status' => true,
-        'message' => 'Product was deleted'
-    ];
-
-    http_response_code(200);
-    echo json_encode($response);
-}
-
+// header indicating that we are receiving response in JSON format
 header('Content-type: json/application');
 
-// .htdocs RewriteRule ^(.+)$ index.php?q=$1 [L,QSA]
+// connecting to MySQL database
 $connect = mysqli_connect('localhost', 'root', '', 'arbuz_db');
 
 $method = $_SERVER['REQUEST_METHOD'];
-$fullpath = explode('/', $_SERVER["REQUEST_URI"]); // $_GET['q']
-$path = $fullpath[2];
-$id = $fullpath[3];
+$fullpath = explode('/', $_GET['q']);
+$path = $fullpath[0];
+$id = $fullpath[1];
 
 switch ($method) {
     case "GET":
@@ -112,8 +41,7 @@ switch ($method) {
     case "PATCH":
         if ($path === 'products') {
             if (isset($id)) {
-                $data = file_get_contents('php://input');
-                $data = json_decode($data, true);
+                $data = json_decode(file_get_contents('php://input'), true);
                 updateProduct($connect, $id, $data);
             }
         }
