@@ -108,8 +108,12 @@ function getOrderById($connect, $id) {
     }
 }
 
-function addOrder($connect, $id, $duration) {
-    mysqli_query($connect, "INSERT INTO `Orders` (`order_id`, `client_id`, `duration_weeks`) VALUES (NULL, '$id', '$duration')");
+function addOrder($connect, $data) {
+    $client_id = $data['client_id'];
+    $datetime = $data['datetime'];
+    $duration_weeks = $data['duration_weeks'];
+
+    mysqli_query($connect, "INSERT INTO `Orders` (`order_id`, `client_id`, `datetime`, `duration_weeks`) VALUES (NULL, '$client_id', '$datetime', '$duration_weeks')");
 
     $response = [
         'status' => true,
@@ -117,6 +121,21 @@ function addOrder($connect, $id, $duration) {
     ];
 
     http_response_code(201);
+    echo json_encode($response);
+}
+
+function updateOrder($connect, $id, $data) {
+    $datetime = $data['datetime'];
+    $duration_weeks = $data['duration_weeks'];
+
+    mysqli_query($connect, "UPDATE `Orders` SET `datetime`='$datetime', `duration_weeks`='$duration_weeks' WHERE `Orders`.`order_id`='$id'");
+
+    $response = [
+        'status' => true,
+        'message' => 'Order was updated'
+    ];
+
+    http_response_code(200);
     echo json_encode($response);
 }
 
@@ -148,15 +167,19 @@ function getItems($connect) {
 }
 
 function getItemById($connect, $id) {
-    $item = mysqli_query($connect, "SELECT * FROM `order_items` WHERE `order_id`='$id'");
+    $items = mysqli_query($connect, "SELECT * FROM `order_items` WHERE `order_id`='$id'");
+    $itemsArr = [];
     
-    if (mysqli_num_rows($item) !== 0) {
-        $item = mysqli_fetch_assoc($item);
-        echo json_encode($item);
+    if (mysqli_num_rows($items) !== 0) {
+        while ($item = mysqli_fetch_assoc($items)) {
+            $itemsArr[] = $item;
+        }
+
+        echo json_encode($itemsArr);
     } else {
         $response = [
             'status' => false,
-            'message' => 'Item not found'
+            'message' => 'No such Order'
         ];
 
         http_response_code(404);
@@ -164,15 +187,46 @@ function getItemById($connect, $id) {
     }
 }
 
-function addItem($connect, $client_id, $product_id, $quantity) {
-    mysqli_query($connect, "INSERT INTO `Order_Items` (`item_id`, `order_id`, `product_id`, `quantity`) VALUES (NULL, '$client_id', '$product_id', '$quantity')");
+function addItem($connect, $data) {
+    $order_id = $data['order_id'];
+    $product_id = $data['product_id'];
+    $quantity = $data['quantity'];
+    // checking if the product is available and only then it can be added to order items
+    $product = mysqli_query($connect, "SELECT * FROM `products` WHERE `product_id`='$product_id'");
+    $product = mysqli_fetch_assoc($product);
+    if ($product['is_available'] === '1') {
+        mysqli_query($connect, "INSERT INTO `Order_Items` (`item_id`, `order_id`, `product_id`, `quantity`) VALUES (NULL, '$order_id', '$product_id', '$quantity')");
+
+        $response = [
+            'status' => true,
+            'message' => mysqli_insert_id($connect)
+        ];
+
+        http_response_code(201);
+        echo json_encode($response);
+    } else {
+        $response = [
+            'status' => false,
+            'message' => 'Product is not available'
+        ];
+
+        http_response_code(404);
+        echo json_encode($response);
+    }
+
+}
+
+function updateItem($connect, $id, $data) {
+    $quantity = $data["quantity"];
+
+    mysqli_query($connect, "UPDATE `Order_Items` SET `quantity`='$quantity' WHERE `Order_Items`.`item_id`='$id'");
 
     $response = [
         'status' => true,
-        'message' => mysqli_insert_id($connect)
+        'message' => 'Order Item was updated'
     ];
 
-    http_response_code(201);
+    http_response_code(200);
     echo json_encode($response);
 }
 
@@ -233,6 +287,22 @@ function addClient($connect, $data) {
     ];
 
     http_response_code(201);
+    echo json_encode($response);
+}
+
+function updateClient($connect, $id, $data) {
+    $client_name = $data['client_name'];
+    $phone_number = $data['phone_number'];
+    $address = $data['address'];
+
+    mysqli_query($connect, "UPDATE `Clients` SET `client_name`='$client_name', `phone_number`='$phone_number', `address`='$address' WHERE `Clients`.`client_id`='$id'");
+
+    $response = [
+        'status' => true,
+        'message' => 'Client was updated'
+    ];
+
+    http_response_code(200);
     echo json_encode($response);
 }
 

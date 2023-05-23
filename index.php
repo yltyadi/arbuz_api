@@ -68,13 +68,17 @@ if ($path === "products") {
             }
             break;
         case "POST":
-            if (isset($id) && isset($duration)) {
-                addOrder($connect, $id, $duration);;
+            addOrder($connect, $_POST);
+            break;
+        case "PATCH":
+            if (isset($id)) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                updateOrder($connect, $id, $data);
             } else {
                 http_response_code(404);
                 echo json_encode([
                     'status' => false,
-                    'message' => 'Client id or Duration are missing'
+                    'message' => 'Missing id'
                 ]);
             }
             break;
@@ -108,13 +112,17 @@ if ($path === "products") {
             }
             break;
         case "POST":
-            if (isset($id) && isset($product_id) && isset($quantity)) {
-                addItem($connect, $id, $product_id, $quantity);;
+            addItem($connect, $_POST);
+            break;
+        case "PATCH":
+            if (isset($id)) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                updateItem($connect, $id, $data);
             } else {
                 http_response_code(404);
                 echo json_encode([
                     'status' => false,
-                    'message' => 'Client id, Product id, or Quantity are missing'
+                    'message' => 'Missing id'
                 ]);
             }
             break;
@@ -147,6 +155,18 @@ if ($path === "products") {
             break;
         case "POST":
             addClient($connect, $_POST);
+            break;
+        case "PATCH":
+            if (isset($id)) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                updateClient($connect, $id, $data);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'status' => false,
+                    'message' => 'Missing id'
+                ]);
+            }
             break;
         case "DELETE":
             if (isset($id)) {
