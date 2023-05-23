@@ -191,35 +191,56 @@ function addItem($connect, $data) {
     $order_id = $data['order_id'];
     $product_id = $data['product_id'];
     $quantity = $data['quantity'];
-    // checking if the product is available and only then it can be added to order items
+    // checking if the product or order is available and only then it can be added to order items
     $product = mysqli_query($connect, "SELECT * FROM `products` WHERE `product_id`='$product_id'");
-    $product = mysqli_fetch_assoc($product);
-    if ($product['is_available'] === '1') {
-        mysqli_query($connect, "INSERT INTO `Order_Items` (`item_id`, `order_id`, `product_id`, `quantity`) VALUES (NULL, '$order_id', '$product_id', '$quantity')");
+    $order = mysqli_query($connect, "SELECT * FROM `orders` WHERE `order_id`='$order_id'");
 
-        $response = [
-            'status' => true,
-            'message' => mysqli_insert_id($connect)
-        ];
-
-        http_response_code(201);
-        echo json_encode($response);
-    } else {
+    if (mysqli_num_rows($product) === 0) {
         $response = [
             'status' => false,
-            'message' => 'Product is not available'
+            'message' => 'Product not found'
         ];
 
         http_response_code(404);
         echo json_encode($response);
-    }
+    } elseif (mysqli_num_rows($order) === 0) {
+        $response = [
+            'status' => false,
+            'message' => 'Order not found'
+        ];
 
+        http_response_code(404);
+        echo json_encode($response);
+    } else {
+        $product = mysqli_fetch_assoc($product);
+
+        if ($product['is_available'] === '1') {
+            mysqli_query($connect, "INSERT INTO `Order_Items` (`item_id`, `order_id`, `product_id`, `quantity`) VALUES (NULL, '$order_id', '$product_id', '$quantity')");
+
+            $response = [
+                'status' => true,
+                'message' => mysqli_insert_id($connect)
+            ];
+
+            http_response_code(201);
+            echo json_encode($response);
+        } else {
+            $response = [
+                'status' => false,
+                'message' => 'Product is not available'
+            ];
+
+            http_response_code(404);
+            echo json_encode($response);
+        }
+    }
 }
 
 function updateItem($connect, $id, $data) {
+    $product_id = $data['product_id'];
     $quantity = $data["quantity"];
 
-    mysqli_query($connect, "UPDATE `Order_Items` SET `quantity`='$quantity' WHERE `Order_Items`.`item_id`='$id'");
+    mysqli_query($connect, "UPDATE `Order_Items` SET `product_id`='$product_id', `quantity`='$quantity' WHERE `Order_Items`.`item_id`='$id'");
 
     $response = [
         'status' => true,
